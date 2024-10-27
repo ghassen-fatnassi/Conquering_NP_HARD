@@ -18,52 +18,57 @@ double distance(const Point &a, const Point &b)
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
-int closest_unvisited(const vector<Point> &cities, const vector<bool> &visited, int point_index)
+double travelCost(const Point &a, const Point &b, double weight)
 {
-    int minor = point_index; // it's the closest to itself anyway
-    double minor_dist = INT_MAX;
+    double dist = distance(a, b);
+    return dist + weight;
+}
+
+int closest_unvisited(const vector<Point> &cities, const vector<bool> &visited, int point_index, const vector<vector<double>> &weights)
+{
+    int minor = point_index;
+    double minor_cost = INT_MAX;
     for (int i = 0; i < cities.size(); i++)
     {
-        if (i != point_index)
+        if (i != point_index && !visited[i])
         {
-            int curr_dist = distance(cities[i], cities[point_index]);
-            if (curr_dist < minor_dist && !visited[i])
+            double curr_cost = travelCost(cities[i], cities[point_index], weights[point_index][i]);
+            if (curr_cost < minor_cost)
             {
                 minor = i;
-                minor_dist = curr_dist;
-            };
+                minor_cost = curr_cost;
+            }
         }
     }
     return minor;
 }
 
-pair<vector<int>, double> NNH(int n, vector<Point> &cities)
+pair<vector<int>, double> NNH(int n, vector<Point> &cities, const vector<vector<double>> &weights)
 {
     vector<bool> visited(n, false);
     vector<int> path;
-    double total_dist = 0;
+    double total_cost = 0;
 
     int curr = 0;
     path.push_back(curr);
-    visited[curr] = 1;
+    visited[curr] = true;
 
-    for (auto elm : cities)
-    {
-        int curr_closest = closest_unvisited(cities, visited, curr);
-        visited[curr_closest] = 1;
-        path.push_back(curr_closest);
-        curr = curr_closest;
-    }
     for (int i = 0; i < n - 1; i++)
     {
-        total_dist += distance(cities[path[i]], cities[path[i + 1]]);
+        int curr_closest = closest_unvisited(cities, visited, curr, weights);
+        visited[curr_closest] = true;
+        path.push_back(curr_closest);
+        total_cost += travelCost(cities[curr], cities[curr_closest], weights[curr][curr_closest]);
+        curr = curr_closest;
     }
-    return {path, total_dist};
+
+    total_cost += travelCost(cities[path[n - 1]], cities[path[0]], weights[path[n - 1]][path[0]]);
+
+    return {path, total_cost};
 }
 
 vector<Point> generateRandomInput(int n)
 {
-    // used chatgpt to do this function :D
     vector<Point> cities(n);
     random_device rd;
     mt19937 gen(rd());
@@ -79,14 +84,51 @@ vector<Point> generateRandomInput(int n)
     return cities;
 }
 
+vector<vector<double>> generateRandomWeights(int n)
+{
+    vector<vector<double>> weights(n, vector<double>(n, 0));
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> dis(0.0, 10.0);
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (i != j)
+            {
+                weights[i][j] = dis(gen);
+            }
+        }
+    }
+    return weights;
+}
+
+void testNNH(int num_tests)
+{
+    for (int i = 0; i < num_tests; i++)
+    {
+        int n = rand() % 10 + 3;
+        vector<Point> cities = generateRandomInput(n);
+        vector<vector<double>> weights = generateRandomWeights(n);
+
+        auto result = NNH(n, cities, weights);
+
+        cout << "Test " << (i + 1) << ": \n";
+        cout << "Number of cities: " << n << "\n";
+        cout << "Path: ";
+        for (int idx : result.first)
+        {
+            cout << idx << " ";
+        }
+        cout << "\nTotal cost: " << result.second << "\n\n";
+    }
+}
+
 int main()
 {
     FASTIO
-    int n = 10;
-    vector<Point> space = generateRandomInput(n);
-    auto tour = NNH(n, space);
-    auto path = tour.first;
-    double cost = tour.second;
-
+    int num_tests = 5;
+    testNNH(num_tests);
     return 0;
 }
