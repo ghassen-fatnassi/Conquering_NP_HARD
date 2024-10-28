@@ -61,7 +61,7 @@ pair<vector<int>, double> NNH(int n, vector<Point> &cities, const vector<vector<
         total_cost += travelCost(cities[curr], cities[curr_closest], weights[curr][curr_closest]);
         curr = curr_closest;
     }
-
+    path.push_back(0);
     total_cost += travelCost(cities[path[n - 1]], cities[path[0]], weights[path[n - 1]][path[0]]);
 
     return {path, total_cost};
@@ -73,8 +73,8 @@ vector<Point> generateRandomInput(int n)
     random_device rd;
     mt19937 gen(rd());
 
-    double mean = 0, std_dev = 10;
-    normal_distribution<double> dis(mean, std_dev);
+    double left = -10, right = 10;
+    uniform_real_distribution<double> dis(left, right);
     for (int i = 0; i < n; i++)
     {
         cities[i].x = dis(gen);
@@ -93,11 +93,13 @@ vector<vector<double>> generateRandomWeights(int n)
 
     for (int i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (int j = i + 1; j < n; j++)
         {
             if (i != j)
             {
-                weights[i][j] = dis(gen);
+                double weight = dis(gen);
+                weights[i][j] = weight;
+                weights[j][i] = weight; // we are just ensuring the additional cost of going from B to A is the same as going from A to B.
             }
         }
     }
