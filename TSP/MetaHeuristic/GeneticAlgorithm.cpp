@@ -1,4 +1,6 @@
 #include <bits/stdc++.h>
+#include <omp.h>
+
 using namespace std;
 
 #define ll long long
@@ -47,31 +49,108 @@ pair<vector<int>, double> Evolve(int n, vector<Point> &cities, const vector<vect
     return {path, total_cost};
 }
 
-vector<double> getFitnessDist(vector<Point> &cities, vector<vector<int>> paths, vector<vector<int>> &weights)
+set<int> getEliteIndexes(vector<double> fitnessDist, int num_elites)
 {
-    vector<double> dist;
-    vector<double> reverse_dist;
-    double maxx = -MAXFLOAT;
-    double sum = 0;
-    for (int i = 0; i < paths.size(); i++)
+    set<pair<double, int>> ord;
+    for (int i = 0; i < fitnessDist.size(); i++)
     {
-        double curr = pathCost(cities, paths[i], weights);
-        if (maxx < curr)
-        {
-            maxx = curr;
-        }
-        reverse_dist.push_back(curr);
+        ord.insert({fitnessDist[i], i});
     }
+    set<int> elite;
+    for (auto elm : ord)
+    {
+        elite.insert(elm.second);
+        num_elites--;
+        if (!num_elites)
+        {
+            break;
+        }
+    }
+    return elite;
+}
+
+vector<vector<int>> survivalToTheShortest(int tournament_size, int num_elites, vector<Point> &cities, vector<vector<int>> &paths, vector<vector<int>> &weights) // a selection process will be used here(tournament + elitism+rndom immigrant) to simulate natural selction
+{
+    int pop_size = paths.size();
+    set<vector<int>> survivors;
+    vector<double> fitnessDist = getFitnessDist(cities, paths, weights);
+    // elite first:
+    for (int i : getEliteIndexes(fitnessDist, num_elites))
+    {
+        survivors.insert(paths[i]);
+    }
+    // now the tournament:
+    for (int i = 0; i < paths.size(); i += tournament_size)
+    {
+        int max_j;
+        double max_fit = MAXFLOAT;
+        for (int j = 0; i < tournament_size; j++)
+        {
+            double fit_j = fitnessDist[i + j];
+            if (fit_j > max_fit)
+            {
+                max_fit = fit_j;
+                max_j = j;
+            }
+        }
+        survivors.insert(paths[i + max_j]);
+    }
+    // finally the random immigrants:
+    /*insert some random paths to spice things up
+    (just like NPC's in the game , except we have hope in these to become main charachters)*/
+    random_device rd;
+    mt19937 rng(rd() + 1);
+    vector<int> random_path = paths[15];
+    while (survivors.size() < pop_size)
+    {
+        shuffle(random_path.begin(), random_path.end(), rng);
+        survivors.insert(random_path);
+    }
+    vector<vector<int>> vector_survivors;
+    for (auto elm : survivors)
+    {
+        vector_survivors.push_back(elm);
+    }
+    return vector_survivors;
+}
+
+vector<double> getFitnessDist(vector<Point> &cities, vector<vector<int>> &paths, vector<vector<int>> &weights)
+{
+    vector<double> reverse_dist(paths.size());
+    double maxx = -MAXFLOAT;
+
+#pragma omp parallel for
     for (int i = 0; i < paths.size(); i++)
     {
-        dist.push_back(maxx - reverse_dist[i]);
+        reverse_dist[i] = pathCost(cities, paths[i], weights);
+    }
+
+#pragma omp parallel for reduction(max : maxx)
+    for (int i = 0; i < reverse_dist.size(); i++)
+    {
+        if (reverse_dist[i] > maxx)
+        {
+            maxx = reverse_dist[i];
+        }
+    }
+
+    vector<double> dist(paths.size());
+    double sum = 0;
+
+#pragma omp parallel for reduction(+ : sum)
+    for (int i = 0; i < paths.size(); i++)
+    {
+        dist[i] = maxx - reverse_dist[i];
         sum += dist[i];
     }
-    vector<double> prob_dist;
+
+    vector<double> prob_dist(paths.size());
+#pragma omp parallel for
     for (int i = 0; i < paths.size(); i++)
     {
-        prob_dist.push_back(dist[i] / sum);
+        prob_dist[i] = dist[i] / sum;
     }
+
     return prob_dist;
 }
 
@@ -85,7 +164,7 @@ double pathCost(vector<Point> &cities, vector<int> path, vector<vector<int>> &we
     return cost;
 }
 
-vector<vector<int>> starterPack(int n, int pop_size)
+vector<vector<int>> starterPack(int n, int pop_size) // this is the initial population (Adam & Eve)
 {
     vector<int> path;
     set<vector<int>> paths;
