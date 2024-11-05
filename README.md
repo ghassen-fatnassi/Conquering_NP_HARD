@@ -1,2 +1,11 @@
 # Conquering_NP_HARD
-trying different solution to traveling salesman problem with different constraints
+in this repo , i implement different solutions to NP hard problems , i started with TSP.
+
+## Implemented Algorithms
+- **Nearest Neighbor**
+- **Greedy Algorithm with Disjoint Set Union (DSU)**
+- **Christofides Algorithm**
+- **Simulated Annealing**
+- **Genetic Algorithm**
+- **Ant Colony Optimization**
+- **Deep-Q Networks**
