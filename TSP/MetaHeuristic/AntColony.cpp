@@ -57,7 +57,7 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
                     if (!visited[j])
                     {
                         total_pheromone += pow(pheromone[current][j], ALPHA) *
-                                           pow(1.0 / (travelCost(cities[current], cities[j], weights[i][j]) + 1e-6), BETA);
+                                           pow(1.0 / (travelCost(cities[current], cities[j], weights[current][j]) + 1e-6), BETA);
                     }
                 }
 
@@ -68,7 +68,7 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
                     if (!visited[j])
                     {
                         cumulative += pow(pheromone[current][j], ALPHA) *
-                                      pow(1.0 / (travelCost(cities[current], cities[j], weights[i][j]) + 1e-6), BETA) / total_pheromone;
+                                      pow(1.0 / (travelCost(cities[current], cities[j], weights[current][j]) + 1e-6), BETA) / total_pheromone;
                         if (cumulative >= random_value)
                         {
                             current = j;
@@ -84,6 +84,7 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
             {
                 ant_costs[ant] += travelCost(cities[ant_paths[ant][i]], cities[ant_paths[ant][i + 1]], weights[ant_paths[ant][i]][ant_paths[ant][i + 1]]);
             }
+            ant_costs[ant] += travelCost(cities[ant_paths[ant].back()], cities[ant_paths[ant][0]], weights[ant_paths[ant].back()][ant_paths[ant][0]]);
 
             if (ant_costs[ant] < total_cost)
             {
@@ -116,6 +117,7 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
             {
                 pheromone[best_paths[i].second[j]][best_paths[i].second[j + 1]] += pheromone_reinforcement / best_paths[i].first;
             }
+            pheromone[best_paths[i].second.back()][best_paths[i].second[0]] += pheromone_reinforcement / best_paths[i].first;
         }
     }
 
