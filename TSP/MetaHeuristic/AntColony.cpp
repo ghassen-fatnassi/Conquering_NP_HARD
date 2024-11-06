@@ -172,7 +172,7 @@ void testACO(int num_tests)
 int main()
 {
     FASTIO
-    int num_tests = 5;
+    int num_tests = 10;
     testACO(num_tests);
     return 0;
 }
