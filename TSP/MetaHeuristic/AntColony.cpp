@@ -29,8 +29,9 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
     const double EVAPORATION_RATE = 0.5;
     const double ALPHA = 1.0;
     const double BETA = 2.0;
-    const int NUM_ANTS = 10;
+    const int NUM_ANTS = 20;
     const int NUM_ITERATIONS = 100;
+    const double ELITIST_FACTOR = 2.0;
 
     vector<vector<double>> pheromone(n, vector<double>(n, 1.0));
     vector<int> path;
@@ -55,7 +56,8 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
                 {
                     if (!visited[j])
                     {
-                        total_pheromone += pow(pheromone[current][j], ALPHA) * pow(1.0 / weights[current][j], BETA);
+                        total_pheromone += pow(pheromone[current][j], ALPHA) *
+                                           pow(1.0 / (travelCost(cities[current], cities[j], weights[i][j]) + 1e-6), BETA);
                     }
                 }
 
@@ -65,7 +67,8 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
                 {
                     if (!visited[j])
                     {
-                        cumulative += pow(pheromone[current][j], ALPHA) * pow(1.0 / weights[current][j], BETA) / total_pheromone;
+                        cumulative += pow(pheromone[current][j], ALPHA) *
+                                      pow(1.0 / (travelCost(cities[current], cities[j], weights[i][j]) + 1e-6), BETA) / total_pheromone;
                         if (cumulative >= random_value)
                         {
                             current = j;
@@ -91,17 +94,27 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
 
         for (int i = 0; i < n; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (int j = i + 1; j < n; j++)
             {
                 pheromone[i][j] *= (1.0 - EVAPORATION_RATE);
+                pheromone[j][i] *= (1.0 - EVAPORATION_RATE);
             }
         }
 
+        vector<pair<double, vector<int>>> best_paths(NUM_ANTS);
         for (int ant = 0; ant < NUM_ANTS; ant++)
         {
-            for (int i = 0; i < (int)ant_paths[ant].size() - 1; i++)
+            best_paths[ant] = {ant_costs[ant], ant_paths[ant]};
+        }
+
+        sort(best_paths.begin(), best_paths.end());
+
+        for (int i = 0; i < NUM_ANTS; i++)
+        {
+            double pheromone_reinforcement = (i == 0) ? ELITIST_FACTOR : 1.0;
+            for (int j = 0; j < (int)best_paths[i].second.size() - 1; j++)
             {
-                pheromone[ant_paths[ant][i]][ant_paths[ant][i + 1]] += 1.0 / ant_costs[ant];
+                pheromone[best_paths[i].second[j]][best_paths[i].second[j + 1]] += pheromone_reinforcement / best_paths[i].first;
             }
         }
     }
