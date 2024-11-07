@@ -117,10 +117,10 @@ pair<vector<int>, double> ACO(int n, vector<Point> &cities, const vector<vector<
             {
                 pheromone[best_paths[i].second[j]][best_paths[i].second[j + 1]] += pheromone_reinforcement / best_paths[i].first;
             }
-            pheromone[best_paths[i].second.back()][best_paths[i].second[0]] += pheromone_reinforcement / best_paths[i].first;
+            pheromone[best_paths[i].second[n - 1]][best_paths[i].second[0]] += pheromone_reinforcement / best_paths[i].first;
         }
     }
-
+    path.push_back(path[0]);
     return {path, total_cost};
 }
 
