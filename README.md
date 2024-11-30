@@ -8,4 +8,3 @@ in this repo , i implement different solutions to NP hard problems , i started w
 - **Simulated Annealing**
 - **Genetic Algorithm**
 - **Ant Colony Optimization**
-- **Deep-Q Networks**
