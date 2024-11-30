@@ -9,6 +9,7 @@ using namespace std;
     ios_base::sync_with_stdio(false);
 #define TC while (t--)
 const int MOD = 1e9 + 7;
+//hello o1
 
 // I structured this file based on my understanding of GeneticAlgorithm , hopefully it works when i'm finished coding it ;
 // the process goes like this :
